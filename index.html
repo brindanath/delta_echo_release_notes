@@ -21,6 +21,51 @@
       const [parsedData, setParsedData] = useState(null);
       const [isProcessing, setIsProcessing] = useState(false);
       const [copySuccess, setCopySuccess] = useState(false);
+      const [isDragging, setIsDragging] = useState(false);
+
+      const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+      };
+
+      const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.currentTarget.contains(e.relatedTarget)) return;
+        setIsDragging(false);
+      };
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setPslConfig(event.target.result);
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+      };
+
+      const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setPslConfig(event.target.result);
+          };
+          reader.readAsText(file);
+        }
+      };
 
       const parseReportFile = (reportText) => {
         const report = {
@@ -448,12 +493,44 @@
                     <span className="text-xl">✨</span>
                   </div>
                   
-                  <textarea
-                    value={pslConfig}
-                    onChange={function(e) { setPslConfig(e.target.value); }}
-                    placeholder="Paste your PSL configuration file here..."
-                    className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-xs resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
+                  <div 
+                    className={"relative rounded-lg transition-all " + (isDragging ? "ring-2 ring-indigo-500 ring-offset-2" : "")}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    {isDragging && (
+                      <div 
+                        className="absolute inset-0 bg-indigo-100 border-2 border-dashed border-indigo-500 rounded-lg flex items-center justify-center z-10 pointer-events-none"
+                      >
+                        <div className="text-center">
+                          <span className="text-4xl">📁</span>
+                          <p className="text-indigo-600 font-medium mt-2">Drop your config file here</p>
+                        </div>
+                      </div>
+                    )}
+                    <textarea
+                      value={pslConfig}
+                      onChange={function(e) { setPslConfig(e.target.value); }}
+                      placeholder="Paste your PSL configuration here or drag & drop a file..."
+                      className={"w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-xs resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent " + (isDragging ? "pointer-events-none" : "")}
+                    />
+                  </div>
+                  
+                  <div className="mt-3 flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition text-sm text-gray-700 border border-gray-300">
+                      <span>📂</span>
+                      <span>Browse Files</span>
+                      <input
+                        type="file"
+                        accept=".txt,.psl,.config"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-gray-500">or drag & drop</span>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -493,7 +570,7 @@
                   disabled={isProcessing || !pslConfig.trim()}
                   className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isProcessing ? 'Processing...' : '✨ Generate Release Notes'}
+                  {isProcessing ? '⏳ Processing...' : '✨ Generate Release Notes'}
                 </button>
 
                 {parsedData && (
@@ -585,6 +662,10 @@
                   </div>
                 )}
               </div>
+            </div>
+            
+            <div className="mt-8 text-center text-gray-500 text-sm">
+              PSL Release Notes Generator • Built for Atropos Health
             </div>
           </div>
         </div>
